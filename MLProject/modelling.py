@@ -12,8 +12,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
-# 0. END ANY ACTIVE RUNS
-mlflow.end_run()
+# mlflow.end_run()
 
 # 1. SET EXPERIMENT
 mlflow.set_experiment("Endometriosis_CI")
@@ -34,7 +33,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # 4. START MLFLOW RUN
-with mlflow.start_run(run_name="CI_RandomForest"):
+with mlflow.start_run():
 
     # 5. MODEL FINAL (AMBIL DARI HASIL TUNING)
     model = RandomForestClassifier(
