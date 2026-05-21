@@ -8,7 +8,6 @@ on:
 jobs:
   train:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -25,7 +24,7 @@ jobs:
       - name: Run MLflow Project
         run: |
           cd MLProject
-          mlflow run . --env-manager=local
+          python modelling.py
 
       - name: List outputs
         run: |
