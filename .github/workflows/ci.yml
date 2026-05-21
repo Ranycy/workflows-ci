@@ -1,16 +1,16 @@
 name: MLflow CI
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   train:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -19,26 +19,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install mlflow scikit-learn pandas numpy imbalanced-learn
+          pip install mlflow scikit-learn pandas numpy imbalanced-learn joblib
 
-      - name: Run training
+      - name: Run MLflow Project
         run: |
           cd MLProject
           python modelling.py
 
-      - name: Build Docker Image from local MLflow
+      - name: List outputs
         run: |
-          mlflow models build-docker \
-            -m MLProject/mlruns \
-            -n endometriosis-model
-
-      - name: Login Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
-      - name: Tag Image
-        run: |
-          docker tag endometriosis-model ranyyy/endometriosis-model:latest
-
-      - name: Push Image
-        run: |
-          docker push ranyyy/endometriosis-model:latest
+          ls -R MLProject
