@@ -6,6 +6,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
+# 0. SET TRACKING URI 
+mlflow.set_tracking_uri("https://dagshub.com/Ranycy/endometriosis-new.mlflow")
+
 # 1. SET EXPERIMENT
 mlflow.set_experiment("Endometriosis_CI")
 
@@ -27,7 +30,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 # 4. START MLFLOW RUN
 with mlflow.start_run(run_name="CI_RandomForest"):
 
-    # 5. MODEL FINAL (AMBIL DARI HASIL TUNING)
+    # 5. MODEL FINAL
     model = RandomForestClassifier(
         n_estimators=200,      
         max_depth=20,          
