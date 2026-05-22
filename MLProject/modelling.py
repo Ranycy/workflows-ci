@@ -6,6 +6,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
+mlflow.set_tracking_uri("https://dagshub.com/Ranycy/endometriosis-new.mlflow")
+os.environ["MLFLOW_TRACKING_USERNAME"] = os.getenv("DAGSHUB_USERNAME")
+os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("DAGSHUB_TOKEN")
+
 # 0. SET TRACKING URI 
 mlflow.set_tracking_uri("https://dagshub.com/Ranycy/endometriosis-new.mlflow")
 
