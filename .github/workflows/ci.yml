@@ -38,3 +38,10 @@ jobs:
       - name: List outputs
         run: |
           ls -R MLProject
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-artifacts
+          path: |
+            MLProject
