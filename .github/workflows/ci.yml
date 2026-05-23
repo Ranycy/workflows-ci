@@ -11,98 +11,54 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      MLFLOW_TRACKING_URI: https://dagshub.com/Ranycy/endometriosis-new.mlflow
-      DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
-      DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
-
     steps:
-
-    # =========================
-    # CHECKOUT
-    # =========================
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    # =========================
-    # SETUP PYTHON
-    # =========================
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
         python-version: "3.12.7"
 
-    # =========================
-    # INSTALL DEPENDENCIES
-    # =========================
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install mlflow scikit-learn pandas numpy dagshub
+        pip install mlflow scikit-learn pandas numpy
 
-    # =========================
-    # FIX DAGSHUB AUTH (INI YANG FIX 403 ERROR)
-    # =========================
-    - name: Configure MLflow Auth
-      run: |
-        echo "MLFLOW_TRACKING_USERNAME=${{ secrets.DAGSHUB_USERNAME }}" >> $GITHUB_ENV
-        echo "MLFLOW_TRACKING_PASSWORD=${{ secrets.DAGSHUB_TOKEN }}" >> $GITHUB_ENV
-
-    # =========================
-    # RUN MLflow PROJECT
-    # =========================
     - name: Run MLflow Project
       run: |
         mlflow run MLProject --env-manager=local
 
-    # =========================
-    # GET RUN ID
-    # =========================
-    - name: Get latest MLflow run_id
+    - name: Get latest run_id
       run: |
         RUN_ID=$(ls -td mlruns/0/*/ | grep -Eo '[0-9a-f]{32}' | head -n 1)
         echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
-        echo "Latest run_id: $RUN_ID"
+        echo "RUN_ID: $RUN_ID"
 
-    # =========================
-    # COMMIT ARTIFACT
-    # =========================
-    - name: Commit & Push results
+    - name: Commit MLflow artifacts
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git add mlruns/
-        git commit -m "Upload MLflow artifacts [skip ci]" || echo "No changes"
+        git commit -m "Add MLflow artifacts [skip ci]" || echo "No changes"
         git push origin main
 
-    # =========================
-    # BUILD DOCKER MODEL (MLFLOW)
-    # =========================
     - name: Build Docker Model
       run: |
         mlflow models build-docker \
-        --model-uri "runs:/$RUN_ID/model" \
-        --name "ml_model"
+          --model-uri "runs:/$RUN_ID/model" \
+          --name "endometriosis_model"
 
-    # =========================
-    # LOGIN DOCKER HUB
-    # =========================
-    - name: Log in to Docker Hub
+    - name: Log in Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-    # =========================
-    # TAG IMAGE
-    # =========================
     - name: Tag Docker Image
       run: |
-        docker tag ml_model ${{ secrets.DOCKER_HUB_USERNAME }}/ml_model:latest
+        docker tag endometriosis_model ${{ secrets.DOCKER_HUB_USERNAME }}/endometriosis-model:latest
 
-    # =========================
-    # PUSH IMAGE
-    # =========================
     - name: Push Docker Image
       run: |
-        docker push ${{ secrets.DOCKER_HUB_USERNAME }}/ml_model:latest
+        docker push ${{ secrets.DOCKER_HUB_USERNAME }}/endometriosis-model:latest
