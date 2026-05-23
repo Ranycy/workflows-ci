@@ -1,12 +1,14 @@
-name: MLflow CI
+name: CI Workflow
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: ["main"]
+
+permissions:
+  contents: write
 
 jobs:
-  train:
+  build:
     runs-on: ubuntu-latest
 
     env:
@@ -15,33 +17,52 @@ jobs:
       DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12.7"
 
-      - name: Install dependencies
-        run: |
-          pip install mlflow scikit-learn pandas numpy imbalanced-learn joblib
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install mlflow scikit-learn pandas numpy dagshub
 
-      - name: Run MLflow Project
-        run: |
-          cd MLProject
-          python modelling.py
-        env:
-          DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
-          DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+    - name: Run MLflow Project
+      run: |
+        mlflow run MLProject --env-manager=local
 
-      - name: List outputs
-        run: |
-          ls -R MLProject
+    - name: Get latest MLflow run_id
+      run: |
+        RUN_ID=$(ls -td mlruns/0/*/ | grep -Eo '[0-9a-f]{32}' | head -n 1)
+        echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: mlflow-artifacts
-          path: |
-            MLProject
+    - name: Commit artifacts
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add mlruns/
+        git commit -m "MLflow artifacts [skip ci]" || echo "No changes"
+        git push origin main
+
+    - name: Build Docker Model
+      run: |
+        mlflow models build-docker \
+        --model-uri "runs:/$RUN_ID/model" \
+        --name "ml_model"
+
+    - name: Login Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+    - name: Tag Docker Image
+      run: |
+        docker tag ml_model ${{ secrets.DOCKER_HUB_USERNAME }}/ml_model:latest
+
+    - name: Push Docker Image
+      run: |
+        docker push ${{ secrets.DOCKER_HUB_USERNAME }}/ml_model:latest
