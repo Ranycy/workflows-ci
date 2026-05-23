@@ -33,7 +33,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # 4. START MLFLOW RUN
-with mlflow.start_run(run_name="CI_RandomForest"):
+with mlflow.start_run(run_name="CI_RandomForest", nested=True):
 
     # 5. MODEL FINAL
     model = RandomForestClassifier(
